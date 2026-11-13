@@ -15,7 +15,7 @@ import {
 import { loadQuests } from '../packages/core/quests.js';
 import { resolveInstance } from '../packages/core/instance.js';
 
-const LAB = String.raw`D:\Desktop\VibeCoding\dsh-minecraft-modpack-studio\lab\重度机械症 - 实验`;
+const LAB = String.raw`D:\Desktop\VibeCoding\minecraft-modpack-studio\lab\重度机械症 - 实验`;
 const instanceDir = path.join(LAB, 'versions', '最小包');
 const instance = resolveInstance(instanceDir);
 console.log('实例：', instance.id, instance.mcVersion, instance.loader);

@@ -9,7 +9,7 @@ import { buildInstallPlan, describePlan, applyInstallPlan, describeResult } from
 import { resolveInstance } from '../packages/core/instance.js';
 import { formatSize } from '../packages/core/mod-source.js';
 
-const instanceDir = String.raw`D:\Desktop\VibeCoding\dsh-minecraft-modpack-studio\lab\重度机械症 - 实验\versions\最小包`;
+const instanceDir = String.raw`D:\Desktop\VibeCoding\minecraft-modpack-studio\lab\重度机械症 - 实验\versions\最小包`;
 const instance = resolveInstance(instanceDir);
 const modsDir = path.join(instanceDir, 'mods');
 console.log('实例：', instance.id, instance.mcVersion, instance.loader, 'mods=', instance.modsCount);

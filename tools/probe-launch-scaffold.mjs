@@ -2,7 +2,7 @@
 // 直接调 core 的 launch 模块（插件版的 mc_launch_test 工具层已删）。
 import { plan, describePlan, launch } from '../packages/core/launch.js';
 
-const dir = String.raw`D:\Desktop\VibeCoding\dsh-minecraft-modpack-studio\lab\_scaffold\mcroot\versions\从零包`;
+const dir = String.raw`D:\Desktop\VibeCoding\minecraft-modpack-studio\lab\_scaffold\mcroot\versions\从零包`;
 
 const p = plan({ instanceDir: dir });
 console.log(describePlan(p).join('\n'));

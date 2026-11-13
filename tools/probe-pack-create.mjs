@@ -9,7 +9,7 @@ import {
   describePackResult,
 } from '../packages/core/pack-create.js';
 
-const mcRoot = String.raw`D:\Desktop\VibeCoding\dsh-minecraft-modpack-studio\lab\重度机械症 - 实验`;
+const mcRoot = String.raw`D:\Desktop\VibeCoding\minecraft-modpack-studio\lab\重度机械症 - 实验`;
 
 const plan = buildPackPlan({
   mcRoot,

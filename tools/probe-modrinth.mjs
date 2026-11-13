@@ -1,5 +1,5 @@
 // 探针：实测 Modrinth v2 搜索 / 版本 / 下载链接（node tools/probe-modrinth.mjs）
-const UA = 'dsh-mc-modpack-studio/0.1.0 (probe; contact=local)';
+const UA = 'minecraft-modpack-studio/0.1.0 (probe; contact=local)';
 
 const facets = [['project_type:mod'], ['categories:neoforge'], ['versions:1.21.1']];
 const url = `https://api.modrinth.com/v2/search?limit=3&query=create&facets=${encodeURIComponent(JSON.stringify(facets))}`;

@@ -1,9 +1,9 @@
-﻿import { registerStudioApi } from "../lib/host/api.js";
+import { registerStudioApi } from "../lib/host/api.js";
 
 const routes = new Map();
 registerStudioApi({ fetch: { register(def) { routes.set(def.path, def); } } });
 
-const dir = "D:\\Desktop\\VibeCoding\\dsh-minecraft-modpack-studio\\lab\\重度机械症 - 实验\\versions\\最小包";
+const dir = "D:\\Desktop\\VibeCoding\\minecraft-modpack-studio\\lab\\重度机械症 - 实验\\versions\\最小包";
 
 async function call(path, query, body) {
   const def = routes.get("/api/mcstudio" + path);

@@ -339,6 +339,8 @@ packages/
     version-install.js  原版与加载器依赖清单、批量下载、跑加载器安装器
     scaffold.js         从零装底座：下游戏本体+资源+加载器 → 跑安装器 → 建实例
     quest-create.js     从零加任务 / 加章节：算计划、写盘、出错整批回滚
+    quest-conditions.js 完成条件 / 奖励的类型目录（界面、后端、MCP 共用一份）
+    quest-defaults.js   任务字段的默认值与「等于默认就不写进文件」的判定（纯函数，界面也引）
     quest-move.js       挪任务坐标：吸附半格、批量改一个文件、写盘后体检回滚
     quest-node.js       改图标 / 改依赖 / 删任务
     quest-image-edit.js 章节画布上的装饰图增删改

@@ -1,5 +1,5 @@
-﻿import { handleQuestCanvas } from "../lib/host/quest-api.js";
-const dir = "D:\\Desktop\\VibeCoding\\dsh-minecraft-modpack-studio\\lab\\重度机械症 - 实验\\versions\\最小包";
+import { handleQuestCanvas } from "../lib/host/quest-api.js";
+const dir = "D:\\Desktop\\VibeCoding\\minecraft-modpack-studio\\lab\\重度机械症 - 实验\\versions\\最小包";
 const url = `http://x/api/mcstudio/quest/canvas?dir=${encodeURIComponent(dir)}&locale=en_us`;
 const r = await handleQuestCanvas({ url, method: "GET" });
 console.log("章数", r.chapterCount, "任务数", r.questCount);
