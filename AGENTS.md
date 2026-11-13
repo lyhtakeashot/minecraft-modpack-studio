@@ -22,7 +22,7 @@
 
 ## 这个项目在做什么
 
-桌面应用 `dsh-mc-modpack-studio`（独立 Electron 软件）：给 Minecraft 整合包做「工作室」。
+桌面应用 `minecraft-modpack-studio`（独立 Electron 软件）：给 Minecraft 整合包做「工作室」。
 四条主线（用户亲自定的验收标准）：
 
 1. **图形化修改** —— 在软件界面里点着改。
@@ -57,7 +57,9 @@ node --import ./test/register.mjs test/<套件>.test.mjs
 
 ## 其它注意
 
-- 这个目录**不是 git 仓库**，没有 diff 可看、没有回滚。改文件前想清楚。
+- 这个目录 **2026-11-13 起已经是 git 仓库**（`git log` 有历史、`git diff` 能看改动）。
+  但初始提交只有一次快照，别指望 `git checkout` 能救回一整轮改坏的东西 ——
+  大改之前先 commit，别攒一堆改动再一起提交。
 - PowerShell 直接 `Get-Content` 读 UTF-8 中文会乱码，读文件用编辑器/read 工具。
 - `npm` 在 PowerShell 下被 ExecutionPolicy 拦；`npm pack` 又因缓存目录在工作区外报 EPERM。发布前用 `Test-Path` 手工核对 `package.json` 的 `files`。
 - **接手先读 `docs/HANDOFF.md`**（写给新会话的施工单：按什么顺序做、动哪个文件的哪一行、接口长什么样）。

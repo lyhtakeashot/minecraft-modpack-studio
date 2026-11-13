@@ -216,7 +216,7 @@ export async function buildExport(instance, opts = {}) {
   }
 
   const meta = {
-    tool: 'dsh-minecraft-modpack-studio',
+    tool: 'minecraft-modpack-studio',
     mode: plan.mode,
     instance: instance.id,
     mcVersion: instance.mcVersion,

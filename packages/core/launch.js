@@ -234,7 +234,7 @@ export function plan(opts) {
     classpath_separator: sep,
     library_directory: libRoot,
     natives_directory: nativesDir,
-    launcher_name: 'dsh-mc-modpack-studio',
+    launcher_name: 'minecraft-modpack-studio',
     launcher_version: '0.1.0',
     version_name: versionId,
     version_type: 'release',

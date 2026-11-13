@@ -1,4 +1,4 @@
-# dsh-mc-modpack-studio
+# minecraft-modpack-studio
 
 Minecraft 整合包工作室（桌面版）。
 
