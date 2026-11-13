@@ -1,0 +1,25 @@
+{
+  "name": "dsh-mc-modpack-studio",
+  "version": "0.1.0",
+  "description": "Minecraft 整合包工作室（桌面版）：探测实例、索引物品、读写任务书、改配方、跑 KubeJS 沙箱、分析 mod 撞车与进度深度、导出 PCL 整合包、真启动验证",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20.18.1"
+  },
+  "dependencies": {},
+  "keywords": [
+    "minecraft",
+    "modpack",
+    "neoforge",
+    "forge",
+    "ftb-quests",
+    "kubejs"
+  ]
+}

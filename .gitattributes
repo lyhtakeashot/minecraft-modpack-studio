@@ -1,0 +1,13 @@
+# 换行符固定成 LF —— 这个项目在 Windows 上开发、代码里到处是中文，
+# 混用 CRLF/LF 会让 diff 全变成「整文件改了」。
+* text=auto eol=lf
+
+# 这些是二进制，别让 git 去猜、也别做换行转换
+*.png binary
+*.ico binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+*.jar binary
+*.zip binary
+*.exe binary

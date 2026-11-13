@@ -1,0 +1,11 @@
+{
+  "name": "@mcstudio/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "整合包工作室的桌面壳：双击 exe 就出窗口，本地服务在进程内起，用户不用装 Node。",
+  "main": "main.mjs",
+  "engines": {
+    "node": ">=18"
+  }
+}

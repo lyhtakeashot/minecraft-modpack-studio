@@ -1,0 +1,15 @@
+{
+  "name": "@mcstudio/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "整合包工作室的核心能力层：读实例、索引物品、改配方、读写任务书、打包导出。零外部依赖，只依赖 node: 内置模块。",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./*.js": "./*.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

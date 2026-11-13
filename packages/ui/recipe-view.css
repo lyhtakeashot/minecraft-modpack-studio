@@ -1,0 +1,292 @@
+/**
+ * 合成表（JEI 那种）的样式。
+ *
+ * 为什么单独一个文件：`app.js` 正在被改，往 `style.css` 里加东西会打架；
+ * 而且这块是给 `recipe-view.js` 配套的，跟着组件放在一起更好找。
+ * 由 `index.html` 里的一行 `<link>` 引入。
+ *
+ * 只用 `style.css` 的 :root 里现有那 14 个变量（--bg --surface --surface2 --line
+ * --line2 --fg --fg2 --fg3 --brand --brand-dim --ok --warn --error --radius）——
+ * **没有 --accent、没有 --bg2**，写了不报错，只是静默失效，界面看着像「莫名发淡」。
+ *
+ * 排版说明：格子尺寸由 JS 通过内联 `--rv-cell` 和 grid-template 设定，
+ * 这里只管颜色、边框、数字角标、箭头。这样换大小号不用改 CSS。
+ */
+
+.mcs-rv {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  width: fit-content;
+  max-width: 100%;
+}
+
+/* ---- 顶部一行小字：3x3 / 压片机 / 一次出 N 个 ---- */
+
+.mcs-rv-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--fg3);
+  line-height: 1.2;
+}
+
+.mcs-rv-size {
+  padding: 1px 5px;
+  border: 1px solid var(--line2);
+  border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.mcs-rv-machine-name {
+  color: var(--brand);
+}
+
+.mcs-rv-total::before {
+  content: '· ';
+  color: var(--line2);
+}
+
+/* ---- 中间一排：格子 → 箭头 → 产物 ---- */
+
+.mcs-rv-flow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mcs-rv-grid {
+  display: grid;
+  gap: 2px;
+  padding: 4px;
+  background: var(--surface2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+/* 一行横排的材料（机器配方 / 熔炉这类单格配方）：不要凹槽那么厚 */
+.mcs-rv-strip {
+  padding: 4px;
+}
+
+/* ---- 单个格子 ---- */
+
+.mcs-rv-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--rv-cell, 40px);
+  height: var(--rv-cell, 40px);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: visible;
+}
+
+/* 空格子：暗色凹槽。这是「九宫格」之所以像九宫格的关键，别省略 */
+.mcs-rv-cell-empty {
+  background: var(--surface);
+  border: 1px dashed var(--line);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+.mcs-rv-cell-tag {
+  border-color: var(--warn);
+}
+
+.mcs-rv-cell-fluid {
+  border-color: var(--brand-dim);
+}
+
+.mcs-rv-cell-unknown {
+  border-style: dashed;
+  border-color: var(--error);
+}
+
+.mcs-rv-clickable {
+  cursor: pointer;
+}
+
+.mcs-rv-clickable:hover {
+  border-color: var(--brand);
+}
+
+/* ---- 图标 ---- */
+
+.mcs-rv-icon {
+  display: block;
+  image-rendering: pixelated; /* MC 的贴图是 16x16，放大后别糊成一片 */
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+/* 拿不到图标时的占位方块：写个首字母，比空白让人踏实 */
+.mcs-rv-icon-ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mcs-rv-icon-ph-t {
+  font-size: 10px;
+  line-height: 1;
+  color: var(--fg2);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ---- 数量角标（>1 才出现，由 JS 决定要不要挂） ---- */
+
+.mcs-rv-count,
+.mcs-rv-out-count {
+  position: absolute;
+  right: 1px;
+  bottom: 0;
+  font-size: 10.5px;
+  line-height: 1.1;
+  color: var(--fg);
+  text-shadow:
+    -1px 0 var(--bg),
+    1px 0 var(--bg),
+    0 -1px var(--bg),
+    0 1px var(--bg); /* 深底浅字：任何贴图上都读得清，和 JEI 一样 */
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+/* ---- 标签 / 流体的小角标 ---- */
+
+.mcs-rv-tag {
+  position: absolute;
+  left: 1px;
+  top: 0;
+  font-size: 9px;
+  line-height: 1.2;
+  color: var(--warn);
+  pointer-events: none;
+}
+
+/* ---- 箭头：纯 CSS 画的，不用 emoji ---- */
+
+.mcs-rv-arrow {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.mcs-rv-arrow-line {
+  width: 16px;
+  height: 2px;
+  background: var(--line2);
+}
+
+.mcs-rv-arrow-head {
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 6px solid var(--line2);
+}
+
+/* ---- 产物 ---- */
+
+.mcs-rv-out {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  background: var(--surface2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  min-height: calc(var(--rv-cell, 40px) + 8px);
+}
+
+.mcs-rv-out-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+
+.mcs-rv-out-empty {
+  font-size: 11.5px;
+  color: var(--fg3);
+  padding: 0 6px;
+}
+
+/* ---- 机器配方：材料横排 → 机器 → 产物 ---- */
+
+.mcs-rv-machine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mcs-rv-machine-in {
+  display: flex;
+  align-items: center;
+}
+
+.mcs-rv-machine-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--brand-dim);
+  border-radius: 6px;
+}
+
+.mcs-rv-machine-label {
+  font-size: 10.5px;
+  line-height: 1.2;
+  color: var(--brand);
+  max-width: 76px;
+  text-align: center;
+}
+
+/* ---- 底部提示 / 改不了的原因 ---- */
+
+.mcs-rv-notes,
+.mcs-rv-blockers {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  max-width: 420px;
+}
+
+.mcs-rv-note {
+  color: var(--fg3);
+}
+
+.mcs-rv-blocker {
+  color: var(--warn);
+}
+
+/* ---- 小号：只缩字，格子尺寸由 JS 的 --rv-cell 决定 ---- */
+
+.mcs-rv-sm {
+  padding: 6px 8px;
+  gap: 4px;
+}
+
+.mcs-rv-sm .mcs-rv-head,
+.mcs-rv-sm .mcs-rv-notes,
+.mcs-rv-sm .mcs-rv-blockers {
+  font-size: 10.5px;
+}

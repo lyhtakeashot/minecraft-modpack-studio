@@ -1,0 +1,2719 @@
+/**
+ * 独立工作台的样式。
+ *
+ * 刻意不依赖任何主题变量：DSH 的 token 名字写错会静默失效（插件那边踩过，
+ * 整片文字发灰），独立版干脆自己定义一套，颜色深浅自己说了算。
+ *
+ * 配色：深灰底 + 高对比文字（正文 #e8eaee，次要 #a8b0bd），
+ * 强调色用青色，警告/错误用橙红，不用纯红（刺眼）。
+ *
+ * 布局：选项目页 / 工作台三栏（左 mod 列表 · 中 蓝图 · 右 任务详情）。
+ */
+
+/* Minecraft 默认点阵字形：任务书画布节点标题/副标题用它，字形像游戏里一样。
+   字体只含 ascii.png 里的 ASCII 与制表符，中文交给后面的系统字体兜底，
+   否则中文标题会变成豆腐块。文件放在 ui 根目录（单层文件名）—— 协议层
+   resolveStatic 只认一层文件名，放子目录会被 404。 */
+@font-face {
+  font-family: 'MCStudioPixel';
+  src: url('/ui/mcstudio-pixel.ttf') format('truetype');
+  font-display: swap;
+}
+
+:root {
+  --bg: #14161a;
+  --surface: #1b1e24;
+  --surface2: #232830;
+  --line: #2f353f;
+  --line2: #3c4450;
+  --fg: #e8eaee;
+  --fg2: #a8b0bd;
+  --fg3: #7d8794;
+  --brand: #3fc8d0;
+  --brand-dim: #1f5f63;
+  --ok: #4bbf73;
+  --warn: #d9a13b;
+  --error: #e0664f;
+  --radius: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font: 13.5px/1.5 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ------------------------------------------------------------ 顶栏 */
+
+.mcs-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  flex: none;
+}
+
+.mcs-top-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.mcs-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.mcs-sub {
+  color: var(--fg2);
+  font-size: 12.5px;
+}
+
+.mcs-top-spacer {
+  flex: 1;
+}
+
+/* ------------------------------------------------------------ 主体三栏 */
+
+.mcs-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/**
+ * 右区（页签栏 + 诊断面板 + 三栏里的中栏和右栏）。
+ *
+ * 2026-11-12 照 VSCode 调整：左栏（章节列表）是整条竖的、贯到顶，
+ * 页签栏从它的右边缘开始 —— 所以页签栏必须包在这一层里，
+ * 不能再像以前那样横跨整个窗口宽度。
+ */
+.mcs-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0; /* flex 子项默认为 auto，不写这个里面的画布会把容器撑爆 */
+}
+
+/** 页签栏下面那一块：中栏（画布）+ 右栏（详情）。 */
+.mcs-panes {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/**
+ * 中栏那一列：画布在上、诊断面板在下。
+ *
+ * 2026-11-12：诊断面板以前直接挂在 `.mcs-main` 里，那个容器装着
+ * 「中栏 + 右栏」两列 —— 面板一展开就用整宽去挤，右栏的任务详情被顶掉。
+ * 用户原话「任务书诊断不要挡住右侧栏」。现在把它收进这层竖向列里，
+ * 面板只在画布正下方占位，左右两栏都不受影响。
+ */
+.mcs-editor-col {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* 左栏：章节列表 */
+
+.mcs-left {
+  width: 246px;
+  flex: none;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  padding: 10px 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.mcs-left-t {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+}
+
+/* 左栏标题行上的两个小加号（照 VSCode 资源管理器），2026-11-09 */
+.mcs-left-add {
+  border: 0;
+  background: transparent;
+  color: var(--fg2);
+  font-size: 11.5px;
+  padding: 2px 5px;
+  margin-left: 2px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.mcs-left-add:hover:not(:disabled) {
+  background: var(--surface2);
+  color: var(--fg);
+}
+
+.mcs-left-add:disabled {
+  color: var(--fg3);
+  cursor: default;
+}
+
+.mcs-left-count {
+  color: var(--fg3);
+  font-size: 11.5px;
+}
+
+/* 章节列表（按分组） */
+
+.mcs-chaprail {
+  flex: 1;
+  min-height: 120px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+}
+
+.mcs-chaprail-group {
+  padding: 7px 9px 4px;
+  color: var(--fg3);
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface2);
+  position: sticky;
+  top: 0;
+}
+
+.mcs-chapitem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 9px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  color: var(--fg2);
+}
+
+.mcs-chapitem:last-child {
+  border-bottom: none;
+}
+
+.mcs-chapitem:hover {
+  background: var(--surface2);
+}
+
+.mcs-chapitem-on {
+  background: var(--surface2);
+  color: var(--fg);
+  box-shadow: inset 2px 0 0 var(--brand);
+}
+
+.mcs-chapitem-open .mcs-chapitem-name {
+  font-weight: 600;
+}
+
+.mcs-chapitem-name {
+  font-size: 12.5px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mcs-chapitem-meta {
+  color: var(--fg3);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mcs-modlist {
+  flex: 1;
+  min-height: 120px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+}
+
+.mcs-modlist-wide {
+  min-height: 240px;
+}
+
+.mcs-mod {
+  padding: 6px 9px;
+  border-bottom: 1px solid var(--line);
+}
+
+.mcs-mod:last-child {
+  border-bottom: none;
+}
+
+.mcs-mod:hover {
+  background: var(--surface2);
+}
+
+.mcs-mod-name {
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mcs-mod-meta {
+  color: var(--fg3);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mcs-hit {
+  border-top: 1px solid var(--line);
+  padding: 7px 0;
+}
+
+.mcs-hit-name {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.mcs-hit-meta {
+  color: var(--fg3);
+  font-size: 11px;
+  margin-bottom: 5px;
+}
+
+/* 搜索结果可以勾选（多选一起装） */
+.mcs-pickable {
+  cursor: pointer;
+  border-radius: var(--radius);
+  padding-left: 6px;
+  padding-right: 6px;
+  margin-left: -6px;
+  margin-right: -6px;
+}
+
+.mcs-pickable:hover {
+  background: var(--surface2);
+}
+
+.mcs-pick-on {
+  background: var(--brand-dim);
+}
+
+.mcs-pick-on:hover {
+  background: var(--brand-dim);
+}
+
+/* 勾选标记：一个方框，勾上了才有对钩 */
+.mcs-tick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  margin-right: 7px;
+  border: 1px solid var(--line2);
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--bg);
+  vertical-align: -2px;
+}
+
+.mcs-tick-on {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+
+.mcs-subcard {
+  border-top: 1px solid var(--line);
+  padding-top: 9px;
+  margin-top: 9px;
+}
+
+/* 中栏：蓝图 */
+
+.mcs-center {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px 16px;
+  gap: 10px;
+}
+
+.mcs-center-t {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.mcs-spacer {
+  flex: 1;
+}
+
+/* 蓝图顶栏的章节页签（2026-11-02：任务书按章节划分） */
+
+.mcs-chapter-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.mcs-chapter-tab {
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--fg2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mcs-chapter-tab:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.mcs-chapter-tab-on {
+  background: var(--brand-dim);
+  border-color: var(--brand);
+  color: #eafcfd;
+}
+
+/* 任务画布上的章节背景图 / 装饰图：半透明沉底，别抢任务的戏 */
+.mcs-quest-bg {
+  opacity: 0.45;
+}
+
+.mcs-canvas {
+  flex: 1;
+  min-height: 0;
+  background: #101216;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden; /* 平移缩放自己管，别让滚动条跟 transform 打架 */
+  position: relative;
+  cursor: default;
+  /* 拖动的时候不要选中文字、也不要让浏览器把图当成可拖的 */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;}
+
+/* 注意：这里故意不写 will-change: transform。
+   给根 svg 加合成层之后，拖动时旧位置有时不被重绘，屏幕上会留一块黑框。 */
+.mcs-canvas svg {
+  display: block;
+  /* 节点拖到画布数据范围之外时别被 svg 自己裁掉（裁掉就像凭空少一块/露黑底） */
+  overflow: visible;
+}
+
+.mcs-canvas image {
+  -webkit-user-drag: none;
+  pointer-events: none; /* 点图标等于点节点，别让图自己抢事件 */
+}
+
+/* 章节装饰图（FTB images）反过来：它要能被拖动、被右键，
+   所以单独把指针事件收回来。不然点背景 = 点画布 = 开始框选。 */
+.mcs-canvas image.mcs-quest-bg {
+  pointer-events: all;
+  cursor: grab;
+}
+
+.mcs-canvas image.mcs-quest-bg:active {
+  cursor: grabbing;
+}
+
+/* 右键拖动平移中：光标换成抓手，别让浏览器弹右键菜单 */
+.mcs-panning,
+.mcs-panning * {
+  cursor: grabbing !important;
+}
+
+/* 框选的那个虚线框 */
+.mcs-band {
+  fill: rgba(63, 200, 208, 0.1);
+  stroke: var(--brand);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+}
+
+/* 拖任务时跟别的任务对齐的参考线（竖 / 横各一条，平时藏起来） */
+.mcs-guide {
+  stroke: var(--brand);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+}
+
+/* 画布下面那行操作提示 */
+.mcs-hint {
+  flex: none;
+  font-size: 11.5px;
+  color: var(--fg3);
+  padding: 0 2px;
+  user-select: none;
+}
+
+/* 放置模式提示条（2026-11-13，方案甲「点画布定位置」）。
+   跟 .mcs-hint 一样是 flex 里的一条，但它要显眼：整条铺底色 + 左边一个跳动的小圆点。 */
+.mcs-placing-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  padding: 7px 10px;
+  border: 1px solid var(--brand-dim);
+  border-radius: var(--radius);
+  background: var(--surface2);
+  font-size: 12px;
+  color: var(--fg);
+  user-select: none;
+}
+.mcs-placing-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--brand);
+  animation: mcs-placing-pulse 1.1s ease-in-out infinite;
+}
+@keyframes mcs-placing-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.72); }
+}
+
+/* 右栏顶部「刚挪完 / 撤销」那条 */
+.mcs-undo {
+  background: var(--surface2);
+  border: 1px solid var(--brand-dim);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mcs-undo-t {
+  font-size: 12px;
+  color: var(--fg2);
+}
+
+/* 右栏任务书体检卡已于 2026-11-12 删除（用户：「太影响阅读了」），
+   诊断统一走底部的 .mcs-diag 面板；原 .mcs-lint-* 一组样式一并清掉了。 */
+
+/**
+ * 画布下方的「任务书诊断」面板（2026-11-12 用户点名，对标 VSCode 的问题面板）。
+ *
+ * ★ 位置：夹在 `.mcs-panes` 和状态栏之间，**从底部展开**（用户：「从底部展开，
+ *   不是从顶部展开」）。放在页签栏下面会让整个编辑区往下掉，看着像从上面挤出来。
+ * 高度固定 220px：问题多的时候内部滚动，不把上面的画布挤没。
+ *
+ * 2026-11-12：它现在只占**中栏这一列**的底部（见 `.mcs-editor-col`），不再横跨右区，
+ * 所以左右两栏（章节列表 / 任务详情）不会因为它展开而被压掉。高度也一并收到 200px，
+ * 免得把画布挤得太小。
+ */
+.mcs-diag {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  max-height: 200px;
+  background: var(--surface);
+  /* 在上面画分隔线（它在内容下面，不在上面） */
+  border-top: 1px solid var(--line);
+}
+
+.mcs-diag-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.mcs-diag-t {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg2);
+}
+
+/* 三个计数。没有问题时压暗，不然「错误 0」看着也像在报警 */
+.mcs-diag-n {
+  font-size: 11.5px;
+  padding: 0 6px;
+  border-radius: 8px;
+  line-height: 17px;
+}
+
+.mcs-diag-n-err {
+  background: var(--error);
+  color: #fff;
+}
+
+.mcs-diag-n-warn {
+  background: var(--warn);
+  color: #1a1a1a;
+}
+
+.mcs-diag-zero {
+  background: var(--line2);
+  color: var(--fg3);
+}
+
+.mcs-diag-x {
+  cursor: pointer;
+  color: var(--fg3);
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+.mcs-diag-x:hover {
+  background: var(--line2);
+  color: var(--fg);
+}
+
+.mcs-diag-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 10px 8px;
+}
+
+.mcs-diag-row {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 3px 4px;
+  border-radius: var(--radius);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+/* 能跳的行（后端给了 questId / chapterId）才可点：手型 + 悬停高亮。
+   以前用的是 `[title]:hover`，但 title 只在能跳时才设 —— 现在两者都由
+   `mcs-diag-jump` 这一个类决定，样式和可点性不会再对不上。 */
+.mcs-diag-jump {
+  cursor: pointer;
+}
+
+.mcs-diag-jump:hover {
+  background: var(--surface2);
+}
+
+.mcs-diag-tag {
+  flex: none;
+  padding: 0 5px;
+  border-radius: 3px;
+  font-size: 10.5px;
+}
+
+.mcs-diag-err .mcs-diag-tag {
+  background: var(--error);
+  color: #fff;
+}
+
+.mcs-diag-warn .mcs-diag-tag {
+  background: var(--warn);
+  color: #1a1a1a;
+}
+
+.mcs-diag-info .mcs-diag-tag {
+  background: var(--line2);
+  color: var(--fg2);
+}
+
+.mcs-diag-where {
+  flex: none;
+  color: var(--fg2);
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mcs-diag-msg {
+  color: var(--fg);
+  word-break: break-word;
+}
+
+/* 右栏：任务详情 */
+
+.mcs-right {
+  width: 340px;
+  flex: none;
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  padding: 10px 12px 20px;
+  overflow-y: auto;
+}
+
+.mcs-right-t {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 9px;
+}
+
+/* ------------------------------------------------------------ 选项目页 */
+
+/* 滚动条必须挂在「铺满整窗」的外层，不能挂在 980px 居中框自己身上。
+   挂在内层时（老写法：max-width:980px + margin:0 auto + overflow-y:auto），
+   1440 宽的窗口里那条竖滚动条会落在 x≈1210 的位置 —— 用户看到的就是
+   「一个完整的界面中间偏右突然冒出一条滚动条，右边还空一大片」。
+   现在拆成两层：外层铺满并负责滚，内层只管居中限宽。 */
+.mcs-pick {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.mcs-pick-inner {
+  max-width: 980px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 34px 26px 40px;
+}
+
+.mcs-pick-hero {
+  margin-bottom: 22px;
+}
+
+.mcs-pick-h1 {
+  font-size: 26px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  letter-spacing: 0.5px;
+}
+
+.mcs-pick-lead {
+  color: var(--fg2);
+  font-size: 13.5px;
+  margin: 0;
+}
+
+.mcs-pick-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.mcs-pick-group {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+
+.mcs-pick-root {
+  color: var(--fg3);
+  font-size: 11.5px;
+  margin-bottom: 8px;
+  word-break: break-all;
+}
+
+.mcs-pick-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: var(--surface2);
+  color: var(--fg);
+  border: 1px solid var(--line2);
+  border-radius: 6px;
+  padding: 9px 12px;
+  margin-bottom: 6px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.mcs-pick-item:hover:not(:disabled) {
+  border-color: var(--brand);
+}
+
+.mcs-pick-item:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.mcs-pick-name {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.mcs-pick-meta {
+  color: var(--fg2);
+  font-size: 12px;
+}
+
+/* ------------------------------------------------------------ 卡片 */
+
+.mcs-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 13px 15px;
+  margin-bottom: 11px;
+}
+
+.mcs-card-t {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 9px;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mcs-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 7px;
+}
+
+/* 深度搜索的结果列表：一行一个目录 + 「打开」。目录可能很长，用等宽体 + 可换行，
+   别让它把卡片撑破（撑破就会在选项目页那条滚动容器上冒横向滚动条）。 */
+.mcs-scanlist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0 10px;
+}
+
+.mcs-scanhit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--line2);
+  border-radius: 6px;
+  padding: 7px 10px;
+}
+
+.mcs-scanhit-dir {
+  flex: 1;
+  min-width: 0;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11.5px;
+  color: var(--fg2);
+  word-break: break-all;
+}
+
+.mcs-scanhit-n {
+  flex: none;
+  color: var(--fg3);
+  font-size: 11.5px;
+}
+
+/* 一行一个包时，包名下面那行小字是它所在的目录。
+   为什么要（2026-11-02）：同一个 versions/ 下会躺着好几个包，只显示包名的话
+   用户分不清这个「最小包」到底是哪个目录里的那个。 */
+.mcs-scanhit-sub {
+  margin: -4px 0 2px 10px;
+  padding-left: 2px;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11px;
+  color: var(--fg3);
+  word-break: break-all;
+}
+
+.mcs-kv {
+  display: grid;
+  grid-template-columns: 74px 1fr;
+  gap: 4px 10px;
+  font-size: 12.5px;
+  margin-bottom: 9px;
+}
+
+.mcs-k {
+  color: var(--fg2);
+}
+
+.mcs-v {
+  color: var(--fg);
+  word-break: break-all;
+}
+
+.mcs-muted {
+  color: var(--fg2);
+  font-size: 12.5px;
+}
+
+/* 任务详情卡的简介 / 要求 / 奖励三块（2026-11-02：这些信息之前只显示个条数） */
+
+.mcs-detail-sec {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+  margin-bottom: 9px;
+}
+
+.mcs-detail-sec-t {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg2);
+  margin-bottom: 5px;
+}
+
+.mcs-detail-desc {
+  font-size: 12.5px;
+  color: var(--fg);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 任务描述里的一行：文字块和图片块混排（FTB 的 {image:…} 标记）。
+   单独包一层是为了让「一行」还是「一行」—— .mcs-detail-desc 自带 pre-wrap，
+   直接在父级里混排会丢掉行边界。 */
+.mcs-desc-line {
+  display: block;
+}
+
+/* 描述里插的图。pixelated 是因为 MC 的贴图都是小像素图，默认插值会糊成一片。 */
+.mcs-desc-img {
+  max-width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  border-radius: var(--radius);
+}
+
+/* 图取不到时的占位。故意把资源 ID 露出来，用户能拿着它去反馈，
+   比静默消失（以为这任务本来就没图）有用。 */
+.mcs-desc-img-missing {
+  font-size: 11.5px;
+  color: var(--fg3);
+  padding: 6px 8px;
+  margin: 6px 0;
+  border: 1px dashed var(--line2);
+  border-radius: var(--radius);
+  word-break: break-all;
+}
+
+/* 描述里那些原本是 `{item.minecraft.diamond}` 的占位符，后端已经换成中文名。
+   用一点点底色标出来，用户能分辨「这是游戏里的名字」而不是作者写的字。
+   ★ 不加 display:inline-block —— 这个类和 .mcs-detail-desc 同时挂在同一个 div 上，
+     改成 inline-block 会把整行变成行内块，换行和缩进都会乱。 */
+.mcs-desc-holder {
+  background: var(--surface2);
+  border-radius: 3px;
+  color: var(--brand);
+}
+
+.mcs-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  padding: 2px 0;
+}
+
+.mcs-detail-item-name {
+  color: var(--fg);
+  word-break: break-all;
+}
+
+/* 前置 / 后续里能点的那一行（点一下跳到那个任务，和诊断面板同一套跳转） */
+.mcs-detail-jump {
+  cursor: pointer;
+  border-radius: var(--radius);
+  padding: 2px 4px;
+  margin: 0 -4px;
+}
+
+.mcs-detail-jump:hover {
+  background: var(--surface2);
+}
+
+/* 悬空依赖：写了个不存在的任务 ID。压暗 + 划掉，一眼看出这条是坏的 */
+.mcs-detail-item-gone .mcs-detail-item-name {
+  color: var(--fg3);
+  text-decoration: line-through;
+}
+
+.mcs-err {
+  color: var(--error);
+  font-size: 12.5px;
+}
+
+.mcs-warn {
+  color: var(--warn);
+  font-size: 12.5px;
+}
+
+.mcs-ok {
+  color: var(--ok);
+  font-size: 12.5px;
+}
+
+/* ------------------------------------------------------------ 控件 */
+
+input,
+select,
+textarea {
+  background: var(--surface2);
+  color: var(--fg);
+  border: 1px solid var(--line2);
+  border-radius: 6px;
+  padding: 6px 9px;
+  font: inherit;
+  font-size: 12.5px;
+  outline: none;
+  width: 100%;
+}
+
+input[type='checkbox'] {
+  width: auto;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--brand);
+}
+
+input::placeholder {
+  color: var(--fg3);
+}
+
+.mcs-input {
+  margin-bottom: 7px;
+}
+
+.mcs-input-sm {
+  font-size: 12px;
+}
+
+/* 表单里的小标题：把「完成条件」「完成后给什么」两组框分开，不靠占位符猜 */
+.mcs-field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg2);
+  margin: 4px 0 5px;
+}
+
+/* ── 默认值 / 改过的值（2026-11-13，照搬 Visual Studio 原则 2 / 3）──
+ *
+ * 用户在 2026-11-13 拍板「默认值的形式照搬 Visual Studio」，微软官方文档里的
+ * 第二条是「属性面板要能看出哪些改过」，第三条是「能一键 Reset」。
+ *
+ * 判定逻辑全在 `packages/core/quest-defaults.js`（界面和写盘层共用一份），
+ * 这里只负责「改过的长什么样」：
+ *   - 整行左侧一道品牌色竖条（一眼扫过去就知道这个任务我动过什么）
+ *   - 标签旁边出现一个 ↩（点了回默认）
+ *   - 没改过的字段在标签后面显示灰色的「默认 X」
+ */
+
+/* 标签行：左边字段名、右边「默认 X」或 ↩ */
+.mcs-field-label-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 没改过时那句灰色的「默认 X」 */
+.mcs-field-def {
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--fg3);
+  margin-left: auto;
+}
+
+/* 改过的字段：整行左边一道品牌色竖条 */
+.mcs-field-dirty {
+  border-left: 2px solid var(--brand);
+  padding-left: 7px;
+  margin-left: -9px;
+}
+
+/* 改过时标签变亮一点（和竖条一起用，光看颜色也能分辨） */
+.mcs-field-dirty > .mcs-field-label-row > span:first-child {
+  color: var(--fg);
+}
+
+/* ↩ 恢复默认：小、安静、只在改过时出现 */
+.mcs-field-reset {
+  margin-left: auto;
+  flex: none;
+  background: transparent;
+  border: 1px solid var(--line2);
+  border-radius: 5px;
+  color: var(--fg2);
+  font: inherit;
+  font-size: 11.5px;
+  line-height: 1;
+  padding: 3px 6px;
+  cursor: pointer;
+}
+
+.mcs-field-reset:hover {
+  color: var(--brand);
+  border-color: var(--brand);
+}
+
+/* 两列并排（要交的物品 + 交几个 / 奖励物品 + 给几个） */
+.mcs-field-half {
+  flex: 1 1 130px;
+  min-width: 0;
+}
+
+.mcs-btn {
+  background: var(--surface2);
+  color: var(--fg);
+  border: 1px solid var(--line2);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mcs-btn:hover:not(:disabled) {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.mcs-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.mcs-btn-primary {
+  background: var(--brand-dim);
+  border-color: var(--brand);
+  color: #eafcfd;
+}
+
+.mcs-btn-primary:hover:not(:disabled) {
+  background: #24787d;
+  color: #ffffff;
+}
+
+.mcs-btn-danger:hover:not(:disabled) {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.mcs-icon {
+  width: 20px;
+  height: 20px;
+  image-rendering: pixelated;
+  flex: none;
+}
+
+.mcs-icon-ph {
+  display: inline-block;
+  background: var(--surface2);
+  border-radius: 4px;
+  flex: none;
+}
+
+.mcs-empty {
+  color: var(--fg3);
+  font-size: 12.5px;
+  padding: 10px 2px;
+}
+
+.mcs-empty-big {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  border: 1px dashed var(--line2);
+  border-radius: var(--radius);
+  padding: 30px;
+}
+
+/* ------------------------------------------------------------ 蓝图节点 */
+
+.mcs-box {
+  fill: var(--surface2);
+  stroke: var(--line2);
+  stroke-width: 1.5;
+}
+
+.mcs-box-sel {
+  fill: #2b333d;
+  stroke: var(--brand);
+  stroke-width: 2.5;
+}
+
+.mcs-box-ph {
+  fill: var(--line);
+}
+
+.mcs-edge {
+  stroke: var(--line2);
+  stroke-width: 2;
+}
+
+.mcs-node {
+  cursor: grab;
+}
+
+.mcs-node:active {
+  cursor: grabbing;
+}
+
+.mcs-node-title {
+  fill: var(--fg);
+  font-size: 11px;
+  font-family: 'MCStudioPixel', 'Microsoft YaHei UI', 'Segoe UI', sans-serif;
+}
+
+.mcs-node-sub {
+  fill: var(--fg2);
+  font-size: 9.5px;
+  font-family: 'MCStudioPixel', 'Microsoft YaHei UI', 'Segoe UI', sans-serif;
+}
+
+/* 游戏观感模式：节点是 FTB 的形状贴图（<mask> 遮罩 + 填色矩形）。
+   选中时那圈亮边在 app.js 里画（SVG 元素不是 DOM 元素，CSS 里没法用 :focus-within）。 */
+.mcs-canvas text.mcs-node-title {
+  paint-order: stroke;
+}
+
+.mcs-canvas text.mcs-node-sub {
+  paint-order: stroke;
+}
+
+/* ------------------------------------------------------------ 右键菜单 */
+
+.mcs-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 168px;
+  background: #22272f;
+  border: 1px solid var(--line2);
+  border-radius: 7px;
+  padding: 5px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+}
+
+.mcs-menu-t {
+  padding: 5px 9px 6px;
+  color: var(--fg2);
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mcs-menu-sep {
+  height: 1px;
+  background: var(--line);
+  margin: 4px 2px;
+}
+
+.mcs-menu-item {
+  padding: 6px 9px;
+  border-radius: 5px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.mcs-menu-item:hover {
+  background: var(--brand-dim);
+  color: #eafcfd;
+}
+
+.mcs-menu-danger:hover {
+  background: #5a2b23;
+  color: #ffd9d2;
+}
+
+/* 蓝图式编辑：搜物品小浮层 + 可拖的椭圆物品框（2026-11-09） */
+.mcs-item-picker {
+  min-width: 178px;
+  max-width: 200px;
+}
+
+.mcs-item-picker .mcs-input {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 6px;
+}
+
+.mcs-item-picker-list {
+  max-height: 280px;
+  overflow: auto;
+}
+
+.mcs-item-chip-svg {
+  display: block;
+}
+
+.mcs-item-chip {
+  cursor: grab;
+}
+
+.mcs-item-chip ellipse {
+  fill: var(--surface);
+  stroke: var(--brand-dim);
+  stroke-width: 1.5px;
+}
+
+.mcs-item-chip:hover ellipse {
+  fill: var(--brand-dim);
+  stroke: var(--brand);
+}
+
+.mcs-item-chip text {
+  fill: var(--fg);
+  font-size: 11px;
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------ 候选列表 */
+
+.mcs-pick-list-sm {
+  max-height: 190px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+}
+
+.mcs-pick-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.mcs-pick-row:last-child {
+  border-bottom: none;
+}
+
+.mcs-pick-row:hover {
+  background: var(--surface2);
+}
+
+/* ------------------------------------------------------------ 底部状态条 */
+
+.mcs-status {
+  flex: none;
+  padding: 6px 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  color: var(--fg2);
+  font-size: 11.5px;
+  display: flex;
+  gap: 14px;
+}
+
+.mcs-status-bad {
+  color: var(--error);
+}
+
+/* ------------------------------------------------------------ 长任务进度条
+   仿 PCL 的下载页：一条总条 + 「已下 / 总量」+ 速度 + 剩余 + 当前文件名。
+   颜色统一用 --brand，和主按钮一致，让人一眼看出「这是正在干活」。 */
+
+.mcs-pbar-box {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.mcs-pbar-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.mcs-pbar-title {
+  color: var(--fg);
+  font-size: 12.5px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mcs-pbar-pct {
+  flex: none;
+  color: var(--brand);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mcs-pbar {
+  position: relative;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.mcs-pbar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--brand);
+  /* 300 毫秒问一次，过渡给 260 毫秒，看起来是连续走的而不是一格一格跳 */
+  transition: width 260ms linear;
+}
+
+/* 不知道总量的时候（打包还没数完文件）：一条来回跑的亮块，别装成有进度 */
+.mcs-pbar-fill-unknown {
+  width: 34%;
+  background: linear-gradient(90deg, transparent, var(--brand), transparent);
+  animation: mcs-pbar-run 1.1s ease-in-out infinite;
+}
+
+@keyframes mcs-pbar-run {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(390%); }
+}
+
+.mcs-pbar-foot {
+  margin-top: 6px;
+  color: var(--fg2);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mcs-pbar-file {
+  margin-top: 3px;
+  color: var(--fg2);
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mcs-pbar-note {
+  margin-top: 3px;
+  color: var(--fg3);
+  font-size: 11.5px;
+}
+
+/* ------------------------------------------------------------ IDE 外壳 */
+
+/*
+ * 整个壳照 VSCode 排：
+ *   菜单栏（文件/下载/任务书/运行/debug）
+ *   页签栏
+ *   主体：活动栏（图标竖排）+ 侧栏 + 编辑区 + 详情
+ *   阶段条（细）
+ *   状态栏
+ * 顺序在 app.js 的 render() 里定，这里只管样子。
+ */
+
+.mcs-menubar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 32px;
+  flex: none;
+  padding: 0 8px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  font-size: 12.5px;
+}
+
+.mcs-menu-wrap {
+  position: relative;
+}
+
+.mcs-menu-btn {
+  background: transparent;
+  border: 0;
+  color: var(--fg2);
+  font: inherit;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.mcs-menu-btn:hover,
+.mcs-menu-btn-on {
+  background: var(--surface2);
+  color: var(--fg);
+}
+
+.mcs-menu-pop {
+  position: absolute;
+  z-index: 70;
+  top: 28px;
+  left: 0;
+  min-width: 218px;
+  background: #22272f;
+  border: 1px solid var(--line2);
+  border-radius: 7px;
+  padding: 5px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+}
+
+.mcs-menu-label {
+  flex: 1;
+}
+
+/* 菜单项右边那句灰字提示，比菜单项本身小一号 */
+.mcs-menu-hint {
+  color: var(--fg3);
+  font-size: 11px;
+  margin-left: 14px;
+}
+
+.mcs-menu-pop .mcs-menu-item {
+  display: flex;
+  align-items: baseline;
+}
+
+.mcs-menu-item-off {
+  color: var(--fg3);
+  cursor: default;
+}
+
+.mcs-menu-item-off:hover {
+  background: transparent;
+  color: var(--fg3);
+}
+
+.mcs-menubar-sub {
+  color: var(--fg3);
+  font-size: 11.5px;
+  padding-right: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 46vw;
+}
+
+/* 页签栏 */
+
+.mcs-tabbar {
+  display: flex;
+  align-items: stretch;
+  gap: 1px;
+  height: 33px;
+  flex: none;
+  padding: 0 6px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+
+.mcs-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 11px;
+  color: var(--fg2);
+  font-size: 12.5px;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mcs-tab:hover {
+  background: var(--surface);
+}
+
+.mcs-tab-on {
+  background: var(--surface);
+  color: var(--fg);
+  border-bottom-color: var(--brand);
+}
+
+.mcs-tab-x {
+  color: var(--fg3);
+  font-size: 14px;
+  line-height: 1;
+  border-radius: 4px;
+  padding: 0 3px;
+}
+
+.mcs-tab-x:hover {
+  background: var(--line2);
+  color: var(--fg);
+}
+
+/* 页签上一个「●」＝这一页还有没提交的改动 */
+.mcs-tab-dot {
+  color: var(--brand);
+  font-size: 9px;
+  line-height: 1;
+}
+
+/* 没有页签时那一行提示 */
+.mcs-tab-empty {
+  color: var(--fg3);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  padding-left: 4px;
+}
+
+/* 关页签前的那句确认 */
+.mcs-tabconfirm {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--line);
+  font-size: 12.5px;
+}
+
+/* 活动栏（最左边竖排图标）—— 骨架改版后已经不用了，样式先留着，
+   哪天想加回来直接复用，不用重写。 */
+
+.mcs-activity {
+  width: 46px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 0;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+}
+
+.mcs-act {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  border-left: 2px solid transparent;
+  color: var(--fg3);
+  font-size: 17px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.mcs-act:hover {
+  color: var(--fg);
+  background: var(--surface2);
+}
+
+.mcs-act-on {
+  color: var(--brand);
+  border-left-color: var(--brand);
+  background: var(--surface2);
+}
+
+/* 底部那条细的阶段进度 */
+
+.mcs-stagebar {
+  flex: none;
+  display: flex;
+  border-top: 1px solid var(--line);
+}
+
+.mcs-stagebar .mcs-stages {
+  flex: 1;
+  border-bottom: 0;
+  background: var(--surface);
+  padding: 0 8px;
+}
+
+.mcs-stagebar .mcs-stage {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+/* ------------------------------------------------------------ 八阶段进度条 */
+
+/*
+ * 顶栏下面那条阶段带。
+ * 颜色语义只有三种：绿=做完了、品牌色=现在该做、灰=还没到。
+ * 没有对应面板的阶段整条都是灰的（.mcs-stage-off），点不动也不假装能点。
+ */
+
+.mcs-topwrap {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.mcs-stages {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 0 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+
+.mcs-stage {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  font-size: 12px;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  color: var(--fg3);
+}
+
+.mcs-stage-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line2);
+  flex: none;
+}
+
+.mcs-stage-done {
+  color: var(--fg2);
+}
+
+.mcs-stage-done .mcs-stage-dot {
+  background: var(--ok);
+}
+
+.mcs-stage-current {
+  color: var(--fg);
+}
+
+.mcs-stage-current .mcs-stage-dot {
+  background: var(--brand);
+}
+
+.mcs-stage-todo {
+  color: var(--fg3);
+}
+
+/* 能点的阶段：鼠标上去有反馈，右下角一个 › 提示「这里能进」 */
+.mcs-stage-link {
+  cursor: pointer;
+}
+
+.mcs-stage-link:hover {
+  background: var(--surface2);
+  color: var(--fg);
+}
+
+.mcs-stage-active {
+  border-bottom-color: var(--brand);
+  color: var(--brand);
+}
+
+.mcs-stage-go {
+  color: var(--fg3);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.mcs-stage-link:hover .mcs-stage-go {
+  color: var(--brand);
+}
+
+/* 点不动的阶段：不手型、不 hover 高亮 */
+.mcs-stage-off {
+  cursor: default;
+  opacity: 0.55;
+}
+
+/* 右侧那句「下一步：…」 */
+.mcs-next {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 4px 7px 16px;
+  font-size: 12px;
+  color: var(--fg2);
+  white-space: nowrap;
+}
+
+.mcs-next-label {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+/* 这句话有时候挺长（「打包：先算一次打包计划」），窗口窄了要能截 */
+.mcs-next-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+
+.mcs-next-done .mcs-next-label {
+  color: var(--ok);
+}
+
+/* ------------------------------------------------------------ 面板内容 */
+
+.mcs-pane-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 2px;
+}
+
+.mcs-rq-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: none;
+}
+
+.mcs-rq-row input {
+  flex: 1;
+}
+
+/* 当前选中的物品，一行横条 */
+.mcs-recipe-cur {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 12.5px;
+}
+
+.mcs-recipe-cur-name {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+/* 一组配方（能做出它 / 它被用在哪） */
+.mcs-group {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.mcs-group-t {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--fg);
+  border-bottom: 1px solid var(--line);
+}
+
+.mcs-recipe-row {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.mcs-recipe-row:last-child {
+  border-bottom: none;
+}
+
+.mcs-recipe-row:hover {
+  background: var(--surface2);
+}
+
+/* 批量勾选：配方行已经有自己的 padding，别让通用 mcs-pickable 的负 margin 把整行推出去；
+   选中态要比 :hover 更「硬」，否则鼠标划上去高亮就消失了。 */
+.mcs-recipe-row.mcs-pickable {
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.mcs-recipe-row.mcs-pick-on,
+.mcs-recipe-row.mcs-pick-on:hover {
+  background: var(--brand-dim);
+}
+
+.mcs-recipe-out {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg);
+}
+
+.mcs-recipe-meta {
+  color: var(--fg3);
+  font-size: 11px;
+  margin: 2px 0 0 26px;
+}
+
+.mcs-recipe-in {
+  color: var(--fg2);
+  font-size: 11px;
+  margin: 2px 0 0 26px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 候选物品列表加高一点（配方面板里一次要看几十个） */
+.mcs-pick-list-tall {
+  max-height: none;
+  flex: 0 0 auto;
+}
+
+/* 表单的一行：左标签右控件 */
+.mcs-field {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 7px;
+}
+
+.mcs-field-k {
+  color: var(--fg2);
+  font-size: 12px;
+  flex: none;
+}
+
+.mcs-field-ch {
+  width: 20px;
+  text-align: center;
+  color: var(--brand);
+  font-weight: 600;
+  font-size: 12.5px;
+  flex: none;
+}
+
+/* 一堆勾选框 */
+.mcs-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+
+.mcs-check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--fg);
+}
+
+.mcs-check .mcs-muted {
+  color: var(--fg3);
+  font-size: 11.5px;
+}
+
+/* 形态三选一（分段控件） */
+.mcs-seg {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.mcs-seg-item {
+  flex: 1;
+  padding: 9px 11px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  cursor: pointer;
+  min-width: 0;
+}
+
+.mcs-seg-item:hover {
+  border-color: var(--line2);
+  background: var(--surface2);
+}
+
+.mcs-seg-on {
+  border-color: var(--brand);
+  background: var(--brand-dim);
+}
+
+.mcs-seg-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--fg);
+  margin-bottom: 3px;
+}
+
+.mcs-seg-blurb {
+  font-size: 11px;
+  color: var(--fg2);
+  line-height: 1.45;
+}
+
+/* 版本那排是五个小方块，允许换行 */
+.mcs-seg-wrap {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mcs-seg-item-sm {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  text-align: center;
+}
+
+/* 代码块（生成的 KubeJS / 启动命令行） */
+.mcs-code {
+  background: #0d0f12;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 9px 10px;
+  margin: 4px 0 8px;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #cdd6e0;
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.mcs-code-sm {
+  max-height: 150px;
+}
+
+/* ------------------------------------------------------------- 分析页 */
+/* 这批样式是给「分析」页用的：页签条 + 进度条形图 + 几行统计。 */
+
+.mcs-atabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 0 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.mcs-atab {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--fg2);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 10px;
+}
+
+.mcs-atab:hover {
+  border-color: var(--brand);
+  color: var(--fg);
+}
+
+.mcs-atab-on {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+.mcs-an-bucket {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  padding: 2px 0;
+}
+
+.mcs-an-depth {
+  color: var(--fg2);
+  flex: 0 0 62px;
+  font-size: 11.5px;
+}
+
+.mcs-an-count {
+  flex: 0 0 78px;
+  font-size: 11.5px;
+  text-align: right;
+}
+
+.mcs-an-bar {
+  color: var(--brand);
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 11.5px;
+  white-space: pre;
+}
+
+.mcs-an-samples {
+  font-size: 11px;
+  padding: 0 0 4px 72px;
+}
+
+/* ------------------------------------------------- 右栏页签（详情 / 物品） */
+
+/* 两个页签横排贴在最上面。右栏本来就很窄，页签只占一行，不再加边框，
+   靠「当前那个字更亮 + 下面一条亮线」区分，和顶部章节页签是一个路数。 */
+.mcs-side-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.mcs-side-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--fg3);
+  font-size: 12.5px;
+  padding: 6px 4px;
+  cursor: pointer;
+}
+
+.mcs-side-tab:hover {
+  color: var(--fg);
+}
+
+.mcs-side-tab-on {
+  color: var(--fg);
+  border-bottom-color: var(--brand);
+  font-weight: 600;
+}
+
+/* --------------------------------------------------- 物品网格（JEI 式 9×16） */
+
+/* 一页 9 列 × 16 行 = 144 个，照抄 JEI 的默认配置
+   （jei-client.ini 里 [ingredientList] maxRows=16 / maxColumns=9）。
+   格子做成正方、按栏宽自适应：340px 的右栏减去两侧 padding 还有 316px，
+   9 列每格约 33px，比 JEI 的 18px 大一圈，图标看得更清楚。 */
+.mcs-grid-search {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.mcs-grid-search .mcs-input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 物品数据设置的折叠横栏：默认只占一行，点开才露出下面那一组（2026-11-08） */
+.mcs-grid-opts-bar {
+  width: 100%;
+  text-align: left;
+  background: var(--surface2);
+  color: var(--fg2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 11.5px;
+  padding: 3px 9px;
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+.mcs-grid-opts-bar:hover {
+  color: var(--fg);
+  border-color: var(--line2);
+}
+
+/* 游戏真值清单那一条：开关 + 一句人话提示（2026-11-07 任务③） */
+.mcs-grid-truth {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 6px;
+  font-size: 11.5px;
+}
+
+.mcs-grid-truth .mcs-muted {
+  flex: 1;
+  min-width: 0;
+}
+
+.mcs-grid-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  margin-bottom: 4px;
+}
+
+/* 搜索语法提示（「正在按标签搜 planks」这种人话） */
+.mcs-grid-hint {
+  font-size: 11px;
+  color: var(--brand);
+  margin-bottom: 5px;
+}
+
+.mcs-grid {
+  position: relative; /* 气泡按格子位置绝对定位，锚在它身上 */
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 2px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 3px;
+}
+
+.mcs-cell {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  cursor: pointer;
+  background: var(--surface2);
+}
+
+.mcs-cell:hover {
+  background: var(--brand-dim);
+  outline: 1px solid var(--brand);
+}
+
+/* 点中的那一格：和游戏里选中的格子一样加个亮框 */
+.mcs-cell-on {
+  outline: 2px solid var(--brand);
+}
+
+/* 空格子：不画占位块，和 JEI 一样留白 */
+.mcs-cell-empty {
+  background: none;
+  cursor: default;
+}
+
+.mcs-cell-empty:hover {
+  background: none;
+  outline: none;
+}
+
+/* 悬停气泡。position:absolute 挂在 .mcs-grid 里，
+   由 showGridTip() 按格子的 offsetLeft/offsetTop 摆位。 */
+.mcs-grid-tip {
+  position: absolute;
+  z-index: 40;
+  min-width: 160px;
+  max-width: 250px;
+  background: #10151b;
+  border: 1px solid var(--line2);
+  border-radius: 6px;
+  padding: 6px 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.mcs-tip-name {
+  color: #fff;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.mcs-tip-line {
+  color: var(--fg2);
+  word-break: break-all;
+}
+
+.mcs-grid-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 7px 0;
+}
+
+.mcs-grid-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--surface2);
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.mcs-grid-pick-t {
+  min-width: 0;
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mcs-grid-acts {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 5px;
+}
+
+/* 「已经填进去了」那条反馈：绿色调，和警告/错误区分开 */
+.mcs-grid-filled {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--ok);
+  background: var(--surface2);
+  border-left: 2px solid var(--ok);
+  border-radius: 4px;
+  padding: 5px 8px;
+  margin-bottom: 6px;
+}
+
+.mcs-grid-filled .mcs-btn {
+  margin-left: auto;
+  padding: 2px 7px;
+  font-size: 11px;
+}
+
+/* 中文名补全（CFPA 社区汉化包）：默认完全离线，只有点按钮才联网 */
+.mcs-name-fill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.mcs-name-fill .mcs-btn {
+  padding: 3px 9px;
+  font-size: 11.5px;
+}
+
+/* 许可证署名：CC BY-NC-SA 4.0 要求标注来源，不能省 */
+.mcs-name-fill-src {
+  font-size: 10.5px;
+  color: var(--fg3);
+  min-width: 0;
+}
+
+.mcs-name-fill-note {
+  font-size: 11px;
+  color: var(--fg2);
+  margin-bottom: 6px;
+}
+
+.mcs-name-fill-err {
+  color: var(--error);
+}
+
+/* 通知浮层（2026-11-06）：飘在右下角，过几秒自己没，点一下也能关 */
+.mcs-toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 60;
+  max-width: 460px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--fg);
+  cursor: pointer;
+  user-select: none;
+  /* 飘出来的时候轻轻淡入，别「啪」地一下 */
+  animation: mcs-toast-in 160ms ease-out;
+}
+
+.mcs-toast-ok {
+  border-left: 3px solid var(--ok);
+}
+
+.mcs-toast-error {
+  border-left: 3px solid var(--error);
+}
+
+.mcs-toast-info {
+  border-left: 3px solid var(--brand);
+}
+
+@keyframes mcs-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* ---------------------------------------------- 游戏预览窗口（2026-11-12） */
+/*
+ * 预览态下点任务节点，在画布正中浮出的一屏 —— 照游戏里点开任务的界面做：
+ * 顶部形状图标 + 标题、中间描述（带翻页和图片）、下面是要求和奖励。
+ *
+ * 为什么用绝对定位钉在画布容器里：用户要求「在画布中心显示一个窗口」，
+ * 而且上一轮刚要求过「别挡住左侧栏和右侧栏」—— 挂在画布容器里天然满足两条。
+ */
+
+.mcs-game-win {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 30;
+  width: min(520px, calc(100% - 48px));
+  max-height: calc(100% - 48px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  background: rgba(28, 30, 36, 0.97);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.6);
+  /* 这个窗口里要能选中文字（用户要求「选中文字后能复制」） */
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.mcs-game-win-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: none;
+}
+
+.mcs-game-win-icon {
+  flex: none;
+  /* 游戏真值（ViewQuestPanel.java:150-165）：iconSize = min(16, 标题高 + 2)，
+     单行标题时只有 **10px** —— 以前这里做成 48px 的大方块，跟游戏完全不是一回事。 */
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+
+.mcs-game-win-icon img {
+  width: 10px;
+  height: 10px;
+  image-rendering: pixelated;
+}
+
+.mcs-game-win-icon-ph {
+  width: 10px;
+  height: 10px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* 标题：居中、最小宽 150、最大宽 500（源码真值） */
+.mcs-game-win-titles {
+  flex: 1;
+  min-width: 0;
+  min-width: 150px;
+  max-width: 500px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.mcs-game-win-title {
+  font-size: 15px;
+  font-weight: 600;
+  /* 主题 quest_view_title 的默认色 #AAAAAA（不是纯白） */
+  color: #aaaaaa;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* 副标题：**斜体 + 灰**，源码写死 ITALIC, GRAY（ViewQuestPanel.java:345-347） */
+.mcs-game-win-sub {
+  font-size: 12.5px;
+  font-style: italic;
+  color: #aaaaaa;
+  margin-top: 2px;
+}
+
+/* ——— 任务目标 / 任务奖励：**左右两栏并排** ———
+   游戏真值（ViewQuestPanel.java:288-311）：w2 = w/2，
+     任务区 x=2      宽 w2-3
+     奖励区 x=w2+2   宽 w2-3
+     中间 1px 竖线落在 w/2
+   以前是「要求一坨、奖励一坨」上下堆叠，结构就和游戏不一样。 */
+.mcs-game-win-cols {
+  display: flex;
+  align-items: stretch;
+  flex: none;
+  margin-top: 6px;
+}
+
+.mcs-game-win-col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mcs-game-win-col-task {
+  padding-right: 8px;
+}
+
+.mcs-game-win-col-reward {
+  padding-left: 8px;
+}
+
+/* 两栏的标题：「任务目标」蓝 #5555FF、「任务奖励」橙 #FFAA00（主题 tasks_text_color / rewards_text_color） */
+.mcs-game-win-col-t {
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  padding-bottom: 2px;
+}
+
+.mcs-game-win-col-task .mcs-game-win-col-t {
+  color: #5555ff;
+}
+
+.mcs-game-win-col-reward .mcs-game-win-col-t {
+  color: #ffaa00;
+}
+
+/* 中间竖线 */
+.mcs-game-win-divider {
+  flex: none;
+  width: 1px;
+  background: var(--line);
+}
+
+/* 一格：18×18 的格子 + 16×16 图标（TaskButton 真值） */
+.mcs-game-win-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 18px;
+  padding: 1px 3px;
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+}
+
+/* 背景只在 hover 时画，平时没边框没底色（TaskButton 真值） */
+.mcs-game-win-cell:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.mcs-game-win-cell-n {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mcs-game-win-cell-c {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--fg3);
+}
+
+/* 完成 → 右上角 8×8 绿对勾（外 #408300、内 #9BC600）；
+   未完成什么都不画 —— 以前用 ✔ / ☐ 两个文字符号，游戏里根本没有这两个字。 */
+.mcs-game-win-check {
+  position: absolute;
+  right: -1px;
+  top: -2px;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid #408300;
+  border-radius: 1px;
+  background: #9bc600;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.mcs-game-win-empty {
+  font-size: 12px;
+  color: #555555; /* DARK_GRAY：游戏里空列表就是这个色 */
+  padding: 2px 0;
+}
+
+.mcs-game-win-meta {
+  font-size: 11px;
+  color: var(--fg3);
+  margin-top: 4px;
+}
+
+.mcs-game-win-x {
+  flex: none;
+  cursor: pointer;
+  color: var(--fg3);
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.mcs-game-win-x:hover {
+  color: var(--fg);
+}
+
+/* 描述区：内容多的时候自己滚动，别把窗口撑破屏幕 */
+.mcs-game-win-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  max-height: 300px;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--fg2);
+}
+
+.mcs-game-win-pager {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.mcs-game-win-pg {
+  width: 26px;
+  height: 22px;
+  background: var(--surface2);
+  color: var(--fg2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.mcs-game-win-pg:hover:not([disabled]) {
+  background: var(--surface3, var(--surface2));
+  color: var(--fg);
+}
+
+.mcs-game-win-pg[disabled] {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.mcs-game-win-pgn {
+  font-size: 11.5px;
+  color: var(--fg3);
+  min-width: 44px;
+  text-align: center;
+}
+
+.mcs-game-win-sec {
+  flex: none;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+
+.mcs-game-win-sec-t {
+  display: flex;
+  align-items: baseline;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg2);
+  margin-bottom: 4px;
+}
+
+/* 要求那一行：可点 = 模拟提交 */
+.mcs-game-win-task {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 5px;
+  margin: 0 -5px;
+  border-radius: var(--radius);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.mcs-game-win-task:hover {
+  background: var(--surface2);
+}
+
+.mcs-game-win-tick {
+  flex: none;
+  width: 14px;
+  color: var(--fg3);
+  font-size: 13px;
+}
+
+.mcs-game-win-task-done .mcs-game-win-tick {
+  color: var(--ok, #6ac46a);
+}
+
+.mcs-game-win-task-done .mcs-game-win-task-n {
+  color: var(--fg3);
+  text-decoration: line-through;
+}
+
+.mcs-game-win-task-n {
+  color: var(--fg);
+  word-break: break-all;
+}
+
+.mcs-game-win-reward {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 5px;
+  font-size: 12.5px;
+  opacity: 0.55;
+}
+
+.mcs-game-win-reward-ready {
+  opacity: 1;
+}
+
+.mcs-game-win-ready {
+  color: var(--ok, #6ac46a);
+}
+
+.mcs-game-win-foot {
+  flex: none;
+  font-size: 11px;
+  color: var(--fg3);
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
